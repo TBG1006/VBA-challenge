@@ -1,0 +1,205 @@
+Sub Stocks()
+
+Application.ScreenUpdating = False
+
+Dim lastRowTicker As Double ' Holds value of last Row of Column A (Ticker)
+Dim lastRowTickerPlusOne As Double 'Last row plus 1 to finish last loop and print last value
+Dim annualOpenPrice As Double ' Holds Value of Beginning Annual Ticker Price
+Dim annualClosePrice As Double ' Holds Value of Ending Annual Ticker Price
+Dim Ticker As String ' Holds value of current ticker symbol
+Dim volumeTotal As Long ' Accrues volume of tickers until the ticker changes
+Dim Summary_Table_Row As Integer 'set location of summary table
+Dim WS_Count As Integer ' count number of sheets in workbook
+Dim ws As Worksheet '
+Dim ICounter As Long 'used to find the opening price at the end of the loop
+Dim myRange As Range ' to determine the cell range for conditianl formatting
+
+'variales for bonus
+
+Dim bonusLastRowPlusOne As Double
+Dim bonusLastRow As Double
+
+
+WS_Count = ActiveWorkbook.Worksheets.Count
+Summary_Table_Row = 2
+ICounter = 2
+'Debug.Print ICounter
+
+ On Error GoTo errHandler
+
+For Each ws In Worksheets
+      
+     ' Find the last row of each worksheet
+        ' Subtract one to return the number of rows without header
+        ' Add one to include last symbol
+        Range("A2").Select
+        lastRowTicker = Cells(Rows.Count, 1).End(xlUp).Row - 1
+        lastRowTickerPlusOne = lastRowTicker + 1
+        'Debug.Print lastRowTicker
+    '..This sections for formatting/ conditional formatting
+        Set myRange = Range("J2:J" & lastRowTickerPlusOne)
+        
+        ' Add column header values
+        Range("I1").Value = "Ticker"
+        Range("J1").Value = "Annual Change"
+        Range("K1").Value = "Annual % Change"
+        Range("L1").Value = "Volume (000's)"
+                     
+        ' format columns to add % and commas
+        Range("K:K").NumberFormat = "0.00%"
+        Range("L:L").NumberFormat = "#,##0"
+        
+        ' conditional formatting
+        ' I recorded this part, I' sure there is a more elegant way to do it, but this works
+       myRange.Select
+       Selection.FormatConditions.Add Type:=xlCellValue, Operator:=xlGreater, _
+       Formula1:="=0"
+       Selection.FormatConditions(Selection.FormatConditions.Count).SetFirstPriority
+        With Selection.FormatConditions(1).Font
+        .Color = -16752384
+        .TintAndShade = 0
+        End With
+        With Selection.FormatConditions(1).Interior
+        .PatternColorIndex = xlAutomatic
+        .Color = 13561798
+        .TintAndShade = 0
+        End With
+    Selection.FormatConditions(1).StopIfTrue = False
+    Selection.FormatConditions.Add Type:=xlCellValue, Operator:=xlLess, _
+    Formula1:="=0"
+    Selection.FormatConditions(Selection.FormatConditions.Count).SetFirstPriority
+        With Selection.FormatConditions(1).Font
+        .Color = -16383844
+        .TintAndShade = 0
+        End With
+        With Selection.FormatConditions(1).Interior
+        .PatternColorIndex = xlAutomatic
+        .Color = 13551615
+        .TintAndShade = 0
+        End With
+    Selection.FormatConditions(1).StopIfTrue = False
+        
+     '..end formatting section
+     
+        
+        ' Loop through Ticker Symbols in column A
+  For I = 2 To lastRowTickerPlusOne
+  
+    ' Check if we are still within the same Ticker, if it is not...
+    If Cells(I + 1, 1).Value <> Cells(I, 1).Value Then
+    
+        'Debug.Print ICounter
+        
+      ' Set the TickerSymbol
+      Ticker = Cells(I, 1).Value
+
+      ' Add to the Volume Total
+      volumeTotal = volumeTotal + Cells(I, 7).Value
+      
+      'collect annualOpeningPrice
+      annualOpeningPrice = Cells(ICounter, 3).Value
+      
+      ' collect annual closing price
+      annualClosingPrice = Cells(I, 6).Value
+      
+      ' Print the Ticker Symbol in the Summary Table
+      Range("I" & Summary_Table_Row).Value = Ticker
+      
+      'Print Yearly change
+      Range("J" & Summary_Table_Row).Value = annualClosingPrice - annualOpeningPrice
+      
+      'Print Precent Change with If staemment to handle divide by zero error
+        If annualOpeningPrice > 0 Then
+            Range("K" & Summary_Table_Row).Value = (annualClosingPrice - annualOpeningPrice) / annualOpeningPrice
+                  
+        Else
+            Range("K" & Summary_Table_Row).Value = 0
+        End If
+      
+      ' Print the Total Volume to the Summary Table
+      Range("L" & Summary_Table_Row).Value = volumeTotal
+                 
+      ' Add one to the summary table row
+      Summary_Table_Row = Summary_Table_Row + 1
+                 
+      ' Reset the Volume Total
+      volumeTotal = 0
+      
+      ICounter = I + 1
+      'Debug.Print ICounter
+      
+    Else
+                
+      ' Add to the Volune Total
+      volumeTotal = (volumeTotal + Cells(I, 7).Value) / 1000
+      
+      
+      
+
+    End If
+
+  Next I
+  
+' Add Column header formatting and auto fit column width
+        With Range("I:L")
+            .Font.Bold = True
+            .EntireColumn.AutoFit
+        End With
+        
+' New section to add Max % increase, Max % decrease, Max total volume
+        
+     'add table headers for bonus table
+      Range("P1").Value = "Ticker"
+     Range("Q1").Value = "Value"
+     Range("O2").Value = "Max % Increase"
+     Range("O3").Value = "Max % Decrease"
+     Range("O4").Value = "Max Volume (000's)"
+     
+     Range("Q2:Q3").NumberFormat = "0.00%"
+     Range("Q4").NumberFormat = "#,##0"
+     
+     With Range("O:Q")
+            .Font.Bold = True
+            .EntireColumn.AutoFit
+    End With
+     
+     Range("K2").Select
+        bonusLastRow = Cells(Rows.Count, 11).End(xlUp).Row - 1
+        bonusLastRowPlusOne = bonusLastRow + 1
+     'Debug.Print bonusLastRow
+    'Debug.Print bonusLastRowPlusOne
+
+' Find Ticker and value for Max and Min % change
+Set Rng1 = Range("K2:K" & bonusLastRowPlusOne)   'or whatever
+MaxPercent = WorksheetFunction.Max(Rng1)
+MinPercent = WorksheetFunction.Min(Rng1)
+MaxRow = WorksheetFunction.Match(MaxPercent, Rng1, 0) + Rng1.Row - 1
+minRow = WorksheetFunction.Match(MinPercent, Rng1, 0) + Rng1.Row - 1
+
+Range("P2").Value = Cells(MaxRow, 9)
+Range("Q2").Value = Cells(MaxRow, 11)
+
+Range("P3").Value = Cells(minRow, 9)
+Range("Q3").Value = Cells(minRow, 11)
+
+' Find ticker and value for max volume
+Set Rng2 = Range("L2:L" & bonusLastRowPlusOne)
+MaxVolume = WorksheetFunction.Max(Rng2)
+maxRow2 = WorksheetFunction.Match(MaxVolume, Rng2, 0) + Rng2.Row - 1
+'Debug.Print
+Range("P4").Value = Cells(maxRow2, 9)
+Range("Q4").Value = Cells(maxRow2, 12)
+
+With Range("O:Q")
+            .Font.Bold = True
+            .EntireColumn.AutoFit
+End With
+     
+ws.Next.Activate
+Summary_Table_Row = 2
+ICounter = 2
+Next ws
+    
+errHandler:    MsgBox ("DONE!")
+  
+End Sub
