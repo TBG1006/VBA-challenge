@@ -2,7 +2,7 @@
 
 ## Background
 
-Use VBA scripting to analyze real stock market data. Depending on your comfort level with VBA, you may choose to challenge yourself with a few of the challenge tasks.
+Use VBA scripting to summarize daily open, close and volume data for a large portfolio of stocks. The script will output annual 
 
 <!-- ### Before You Begin
 
