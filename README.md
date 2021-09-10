@@ -2,7 +2,7 @@
 
 ## Background
 
-Use VBA scripting to summarize daily open, close and volume data for a large portfolio of stocks. The script will output annual 
+Use VBA scripting to summarize daily open, close and volume data for a large portfolio of stocks. The script will output yearly change (actual and %) as well as total stock volume. It will also find and print the individual stock with the greatest % increase, decrease, and total volume. 
 
 <!-- ### Before You Begin
 
